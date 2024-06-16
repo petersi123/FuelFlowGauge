@@ -1,0 +1,48 @@
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x27,16, 2); 
+
+volatile unsigned long pulseCount = 0;
+const int sensorPin = 2;
+unsigned long previousMillis = 0;
+unsigned long totalpulses = 0;
+const unsigned long interval = 5000;
+const int button = 6;
+
+void setup() 
+{
+  lcd.init();      
+  lcd.backlight();
+  attachInterrupt(digitalPinToInterrupt(sensorPin), countPulse, RISING);
+  pinMode(button, INPUT);
+  Serial.begin(9600);
+}
+
+void loop() 
+{
+   unsigned long currentMillis = millis();
+   if (digitalRead(button) == HIGH)
+   {
+    totalpulses = 0;
+   }
+
+    if (currentMillis - previousMillis >= interval) 
+    {
+    detachInterrupt(digitalPinToInterrupt(sensorPin));
+    float litersPerMinute = ((pulseCount * 2.5)*2.3) / 1000.0;
+    litersPerMinute *= 12;
+    totalpulses = pulseCount +  totalpulses;
+    pulseCount = 0;
+    previousMillis = currentMillis;
+    float liters = ((totalpulses * 2.5)*2.3) / 1000.0;
+    attachInterrupt(digitalPinToInterrupt(sensorPin), countPulse, RISING);
+    lcd.setCursor(0,0);
+    lcd.print(litersPerMinute);
+    lcd.setCursor(0,1);
+    lcd.print(liters);
+  }
+}
+
+void countPulse() 
+{
+  pulseCount++;
+}
